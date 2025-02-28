@@ -1,0 +1,19 @@
+version: '3.1'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql-task-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: task_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user_password
+    ports:
+      - "3307:3306"  # เปลี่ยนพอร์ต 3306 เป็น 3307
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
+    driver: local

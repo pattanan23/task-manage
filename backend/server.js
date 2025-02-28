@@ -10,34 +10,87 @@ const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '232921_Sa',
-    database: 'task_db',
+    database: 'task_db'
 });
 
 db.connect(err => {
     if (err) {
-        console.error('Database connection failed: ', err);
+        console.error('❌ Database connection failed:', err);
     } else {
-        console.log('Connected to MySQL database');
+        console.log('✅ Connected to MySQL database');
     }
 });
 
+// API GET Tasks
 app.get('/tasks', (req, res) => {
-    db.query('SELECT * FROM tasks', (err, results) => {
-        if (err) throw err;
+    // ดึงข้อมูลจากตาราง tasks รวมทั้ง due_date
+    db.query('SELECT id, title, description, status, due_date FROM tasks', (err, results) => {
+        if (err) {
+            console.error('❌ Error fetching tasks:', err);
+            return res.status(500).json({ error: 'Error fetching tasks' });
+        }
+        // ส่งข้อมูลทาสก์ทั้งหมดรวมทั้ง due_date ไปยัง frontend
         res.json(results);
     });
 });
 
-// API เพิ่ม Task ใหม่
+
 app.post('/tasks', (req, res) => {
-    const { title } = req.body;
-    db.query('INSERT INTO tasks (title) VALUES (?)', [title], (err, result) => {
-        if (err) throw err;
-        res.json({ id: result.insertId, title });
+    const { title, description, status, due_date } = req.body;  // ตรวจสอบว่าได้ดึงค่าถูกต้องหรือไม่
+
+    // ตรวจสอบค่าที่รับมา
+    console.log('Received Data:', { title, description, status, due_date });
+
+    // เชื่อมต่อกับฐานข้อมูลและบันทึกข้อมูลใหม่
+    db.query('INSERT INTO tasks (title, description, status, due_date) VALUES (?, ?, ?, ?)', 
+        [title, description, status, due_date], 
+        (err, result) => {
+            if (err) {
+                console.error('Error:', err);
+                return res.status(500).send('Error inserting task');
+            }
+            res.json({ id: result.insertId, title, description, status, due_date });
+        }
+    );
+});
+
+// API สำหรับอัปเดตเฉพาะสถานะของ Task
+app.put('/tasks/:id', (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body; // อัปเดตแค่ status เท่านั้น
+
+    // ตรวจสอบว่าได้รับ status หรือไม่
+    if (!status) {
+        return res.status(400).json({ error: 'Status is required' });
+    }
+
+    // SQL Query สำหรับอัปเดตแค่สถานะ
+    const query = `
+        UPDATE tasks 
+        SET status = ? 
+        WHERE id = ?;
+    `;
+    db.query(query, [status, id], (err, result) => {
+        if (err) {
+            console.error('❌ Error updating task status:', err);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+
+        // ถ้าไม่มีการอัปเดต (เช่นไม่พบ ID)
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Task not found' });
+        }
+
+        // ถ้าทุกอย่างถูกต้อง ส่งกลับข้อมูล Task ที่อัปเดตสถานะ
+        res.json({
+            id,
+            status
+        });
     });
 });
 
-// API ลบ Task ตาม ID
+
+// API DELETE Task
 app.delete('/tasks/:id', (req, res) => {
     const { id } = req.params;
     db.query('DELETE FROM tasks WHERE id = ?', [id], (err, result) => {
@@ -46,24 +99,77 @@ app.delete('/tasks/:id', (req, res) => {
     });
 });
 
-// API ค้นหา Task ตาม ID
-app.get('/tasks/:id', (req, res) => {
+// API สำหรับอัปเดต Title ของ Task
+app.put('/tasks/title/:id', (req, res) => {
     const { id } = req.params;
-    db.query('SELECT * FROM tasks WHERE id = ?', [id], (err, results) => {
+    const { title } = req.body;  // รับค่า title จาก body
+
+    // ตรวจสอบว่าได้รับ title หรือไม่
+    if (!title) {
+        return res.status(400).json({ error: 'Title is required' });
+    }
+
+    // SQL Query สำหรับอัปเดต title
+    const query = `
+        UPDATE tasks 
+        SET title = ? 
+        WHERE id = ?;
+    `;
+    db.query(query, [title, id], (err, result) => {
         if (err) {
-            console.error('❌ Error fetching task:', err);
-            res.status(500).json({ error: 'Internal Server Error' });
-        } else {
-            if (results.length > 0) {
-                res.json(results[0]); // ส่งข้อมูล Task กลับไป
-            } else {
-                res.status(404).json({ error: 'Task not found' });
-            }
+            console.error('❌ Error updating task title:', err);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
+
+        // ถ้าไม่มีการอัปเดต (เช่นไม่พบ ID)
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Task not found' });
+        }
+
+        // ถ้าทุกอย่างถูกต้อง ส่งกลับข้อมูล Task ที่อัปเดต title
+        res.json({
+            id,
+            title
+        });
+    });
+});
+
+app.post('/tasks', (req, res) => {
+    const { title, description, status, due_date } = req.body;
+
+    // ตรวจสอบค่าที่รับมา
+    console.log('Received Data:', { title, description, status, due_date });
+
+    // เชื่อมต่อกับฐานข้อมูลและบันทึกข้อมูลใหม่
+    db.query('INSERT INTO tasks (title, description, status, due_date) VALUES (?, ?, ?, ?)', 
+        [title, description, status, due_date], 
+        (err, result) => {
+            if (err) {
+                console.error('Error:', err);
+                return res.status(500).send('Error inserting task');
+            }
+            res.json({ id: result.insertId, title, description, status, due_date });
+        }
+    );
+});
+
+app.get('/tasks', (req, res) => {
+    const searchQuery = req.query.search || '';  // ใช้พารามิเตอร์ search ถ้ามี
+
+    const query = `
+        SELECT id, title, description, status, due_date
+        FROM tasks
+        WHERE title LIKE ? OR description LIKE ?
+    `;
+
+    db.query(query, [`%${searchQuery}%`, `%${searchQuery}%`], (err, results) => {
+        if (err) {
+            console.error('❌ Error fetching tasks:', err);
+            return res.status(500).json({ error: 'Error fetching tasks' });
+        }
+        res.json(results);
     });
 });
 
 
-// เปิดเซิร์ฟเวอร์ที่ port 5000
-app.listen(5000, () => console.log('Server running on port 5000'));
-
+app.listen(4000, () => console.log('✅ Server running on port 4000'));

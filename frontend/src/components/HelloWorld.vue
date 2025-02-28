@@ -1,64 +1,58 @@
 <template>
-  <div>
-    <h1>Task Management</h1>
-
-    <input v-model="newTask" placeholder="Enter a task..." />
-    <button @click="addTask">Add Task</button>
-
+  <div class="hello">
+    <h1>{{ msg }}</h1>
+    <p>
+      For a guide and recipes on how to configure / customize this project,<br>
+      check out the
+      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
+    </p>
+    <h3>Installed CLI Plugins</h3>
     <ul>
-      <li v-for="task in tasks" :key="task.id">
-        {{ task.title }}
-        <button @click="deleteTask(task.id)">❌</button>
-      </li>
+      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
+      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
+    </ul>
+    <h3>Essential Links</h3>
+    <ul>
+      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
+      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
+      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
+      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
+      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
+    </ul>
+    <h3>Ecosystem</h3>
+    <ul>
+      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
+      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
+      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
+      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
+      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
     </ul>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
-  data() {
-    return {
-      tasks: [],  // เก็บรายการ Task
-      newTask: '' // เก็บข้อความจาก input
-    };
-  },
-  methods: {
-    async fetchTasks() {
-      try {
-        const res = await axios.get('http://localhost:5000/tasks');
-        this.tasks = res.data;
-      } catch (error) {
-        console.error('❌ Error fetching tasks:', error);
-      }
-    },
-    async addTask() {
-      if (!this.newTask) return;
-      try {
-        const res = await axios.post('http://localhost:5000/tasks', { title: this.newTask });
-        this.tasks.push(res.data); // อัปเดต UI
-        this.newTask = ''; // ล้างช่อง input
-      } catch (error) {
-        console.error('❌ Error adding task:', error);
-      }
-    },
-    async deleteTask(id) {
-      try {
-        await axios.delete(`http://localhost:5000/tasks/${id}`);
-        this.tasks = this.tasks.filter(task => task.id !== id);
-      } catch (error) {
-        console.error('❌ Error deleting task:', error);
-      }
-    }
-  },
-  mounted() {
-    this.fetchTasks();
+  name: 'HelloWorld',
+  props: {
+    msg: String
   }
-};
+}
 </script>
 
-<style>
-h1 { color: #2c3e50; }
-button { margin-left: 10px; cursor: pointer; }
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped>
+h3 {
+  margin: 40px 0 0;
+}
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+li {
+  display: inline-block;
+  margin: 0 10px;
+}
+a {
+  color: #42b983;
+}
 </style>
